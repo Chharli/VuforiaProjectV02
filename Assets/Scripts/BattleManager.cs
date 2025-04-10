@@ -11,16 +11,21 @@ public class BattleManager : MonoBehaviour
     private List<Fighter> fighters = new List<Fighter>();
     [SerializeField]
     private int requieredFighters = 2;
-    [SerializedField]
-    private float secondsbetweenAttacks = 1f;
+    [SerializeField]
+    private float secondsBetweenAttacks = 1f;
     [SerializeField]
     private float secondsToStartBattle = 1f;
     [SerializeField]
     public UnityEvent onBattleStart;
     [SerializeField]
-    public UnityEvent onBattleStop;
+    private UnityEvent onBattleStop;
+    [SerializeField]
+    private UnityEvent onBattleEnd;
+
     private int currentFighterIndex = 0;
+
     private bool isBattleActive = false;
+    private Coroutine attackCoroutine;
 
     public void AddFighter(Fighter fighter)
     {
@@ -40,38 +45,52 @@ public class BattleManager : MonoBehaviour
         }
         else
         {
-            StartBattle();
+            Invoke("StartBattle", secondsToStartBattle);
         }
     }
     private void StartBattle()
     {
+        if (isBattleActive || fighters.Count < requieredFighters)
+        {
+            return;
+        }
         isBattleActive = true;
         onBattleStart?.Invoke();
-        StartCoroutine(Attack());
+        attackCoroutine = StartCoroutine(Attack());
     }
 
     private IEnumerator Attack()
     {
+        if (!isBattleActive)
+        {
+            yield break;
+        }
         currentFighterIndex = Random.Range(0, fighters.Count);
         Fighter attacker = fighters[currentFighterIndex];
         Fighter defender;
         do
         {
             currentFighterIndex = Random.Range(0, fighters.Count);
-            defender =fighters[currentFighterIndex];
-            while (attacker == defender);
+            defender = fighters[currentFighterIndex];
         }
+        while (attacker == defender);
+
+        attacker.transform.LookAt(defender.transform.position);
+        defender.transform.LookAt(attacker.transform.position);
+
         attacker.Attack();
+        yield return new WaitForSeconds(attacker.AttackDuration);
         float damage = attacker.GetDamage();
         defender.GetComponent<Health>().TakeDamage(damage);
 
         yield return new WaitForSeconds(secondsBetweenAttacks);
         if (defender.GetComponent<Health>().CurrentHealth > 0)
         {
-            StartCoroutine(Attack());
+            attackCoroutine = StartCoroutine(Attack());
         }
         else
         {
+            onBattleEnd?.Invoke();
             StopBattle();
         }
     
@@ -79,7 +98,12 @@ public class BattleManager : MonoBehaviour
     }
     private void StopBattle()
     {
-        StopCoroutine(Attack());
+        isBattleActive = false;
+        if (attackCoroutine != null)
+        {
+            StopCoroutine(attackCoroutine);
+            attackCoroutine = null;
+        }
         onBattleStop?.Invoke();
 
     }

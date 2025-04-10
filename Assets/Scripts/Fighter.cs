@@ -12,6 +12,12 @@ public class Fighter : MonoBehaviour
     private float minDamage = 5f;
     [SerializeField]
     private float maxDamage = 20f;
+    [SerializeField]
+    private float attackDuration = 1f;
+    [SerializeField]
+    private string fighterName = "Fighter";
+    public string FighterName => fighterName;
+    public float AttackDuration => attackDuration;
 
     public void OnCharacterStart()
     {
@@ -26,7 +32,7 @@ public class Fighter : MonoBehaviour
         onAttack?.Invoke();
     }
     
-    public void GetDamage()
+    public float GetDamage()
     {
         return Random.Range(minDamage, maxDamage);
     }
