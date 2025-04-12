@@ -21,6 +21,8 @@ public class BattleManager : MonoBehaviour
     private UnityEvent onBattleStop;
     [SerializeField]
     private UnityEvent onBattleEnd;
+    [SerializeField]
+    private UnityEvent<string> onFighterWins;
 
     private int currentFighterIndex = 0;
 
@@ -90,11 +92,16 @@ public class BattleManager : MonoBehaviour
         }
         else
         {
-            onBattleEnd?.Invoke();
-            StopBattle();
+            BattleFinish(attacker.FighterName);
         }
     
     
+    }
+    private void BattleFinish(string winnerName)
+    {
+        StopBattle();
+        onBattleEnd?.Invoke();
+        onFighterWins?.Invoke(winnerName);
     }
     private void StopBattle()
     {
